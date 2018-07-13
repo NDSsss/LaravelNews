@@ -1,19 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout android:layout_width="wrap_content"
+<LinearLayout android:layout_width="match_parent"
     android:layout_height="wrap_content"
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    android:id="@+id/article_lianer">
+    <com.facebook.drawee.view.SimpleDraweeView
+        android:id="@+id/my_image_view"
+        android:layout_width="match_parent"
+        android:layout_height="250dp"
+        android:scaleType="centerInside"
+        />
     <TextView
         android:id="@+id/textViewTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:maxLength="150"
         android:text="@string/EXAMPLE_TEXT"/>
-    <com.facebook.drawee.view.SimpleDraweeView
-        app:layout_constraintTop_toBottomOf="@id/textViewTitle"
-        android:id="@+id/my_image_view"
-        android:layout_width="300dp"
-        android:layout_height="250dp"
-        />
 </LinearLayout>
