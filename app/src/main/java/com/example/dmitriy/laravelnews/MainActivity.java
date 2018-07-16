@@ -2,6 +2,7 @@ package com.example.dmitriy.laravelnews;
 
 import android.arch.persistence.room.Room;
 import android.content.Intent;
+import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Message;
 import android.support.v4.widget.SwipeRefreshLayout;
@@ -29,7 +30,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         SwipeRefreshLayout.OnRefreshListener,NewsInterface{
 
     public static final String ARTICLE_BODY="articleBody",ARTICLE_IMAGE="articleImage",ARTICLE_EXTRA="articleExtra";
-    private static final int LOAD_FROM_DB=0,INSERT_IN_DB=1;
 
     @BindView(R.id.recyclerView)
     RecyclerView recyclerView;
@@ -51,7 +51,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     List<Article> articles;
     Boolean firtstTimeAdapter =true;
     NewsHelper newsHelper;
-    Handler handler;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,36 +62,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 AppDatabase.class, "database").allowMainThreadQueries().build();
         articleDao = db.articleDao();
         newsHelper= new NewsHelper(this);
-        handler = new Handler() {
-            @Override
-            public void handleMessage(Message msg) {
-                switch (msg.what){
-                    case LOAD_FROM_DB:
-                    if (!articles.isEmpty()) {
-                        adapter = new ArticleAdapter(articles, MainActivity.this);
-                        RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(getApplicationContext());
-                        recyclerView.setLayoutManager(layoutManager);
-                        recyclerView.setAdapter(adapter);
-                        recyclerView.setVisibility(View.VISIBLE);
-                        progressBar.setVisibility(View.INVISIBLE);
-                    } else {
-                        makeResponse();
-                    }
-                    break;
-                    case INSERT_IN_DB:
-                        if (firtstTimeAdapter){
-                            fillRecyclerView();
-                            firtstTimeAdapter=false;}
-                        else{
-                            recyclerView.getAdapter().notifyDataSetChanged();
-                        }
-                        recyclerView.setVisibility(View.VISIBLE);
-                        progressBar.setVisibility(View.INVISIBLE);
-                        swipeRefreshLayout.setEnabled(true);
-                        break;
-                }
-            }
-        };
         fillRecyclerView();
     }
     void makeResponse() {
@@ -101,24 +70,19 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
     void fillRecyclerView()
     {
-        Runnable runnable = new Runnable() {
-            public void run() {
-                articles=articleDao.getAll();
-                handler.sendEmptyMessage(LOAD_FROM_DB);
-            }
-        };
-        Thread thread = new Thread(runnable);
-        thread.start();
-
-
+        articles=articleDao.getAll();
+        Log.d(TAG, "fillRecyclerView: "+articles.isEmpty());
+        ReadFromDb readFromDb = new ReadFromDb();
+        readFromDb.execute();
     }
 
     @Override
     public void onClick(View view) {
         failLinear.setVisibility(View.INVISIBLE);
-        recyclerView.setVisibility(View.VISIBLE);
+        swipeRefreshLayout.setVisibility(View.VISIBLE);
+        swipeRefreshLayout.setEnabled(false);
         fillRecyclerView();
-        
+
     }
 
     @Override
@@ -135,41 +99,88 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public void onRefresh() {
         Log.d(TAG, "onRefresh: ");
         swipeRefreshLayout.setRefreshing(false);
+        swipeRefreshLayout.setEnabled(false);
         recyclerView.setVisibility(View.INVISIBLE);
         progressBar.setVisibility(View.VISIBLE);
-        swipeRefreshLayout.setEnabled(false);
         makeResponse();
 
     }
 
     @Override
-    public void sucsess(final Response<LaravelNewsUnit> response) {
+    public void sucsess(Response<LaravelNewsUnit> response) {
         failLinear.setVisibility(View.INVISIBLE);
         articleDao.deleteAll();
-        Runnable runnable = new Runnable() {
-            public void run() {
-                articleDao.deleteAll();
-                Article article = new Article();
-                for (Datum datum:response.body().getData()) {
-                    article.setTitle(datum.getTitle());
-                    article.setImage(datum.getImage());
-                    article.setBody(datum.getBody());
-                    article.setId(datum.getId());
-                    articleDao.insert(article);
-                }
-                handler.sendEmptyMessage(INSERT_IN_DB);
-            }
-        };
-        Thread thread = new Thread(runnable);
-        thread.start();
-
+        InsertInDb insertInDb = new InsertInDb();
+        insertInDb.execute(response);
     }
 
     @Override
     public void fail(Throwable t) {
         progressBar.setVisibility(View.INVISIBLE);
         failLinear.setVisibility(View.VISIBLE);
-        failTextView.setText(t.getLocalizedMessage());
         swipeRefreshLayout.setEnabled(true);
+        failTextView.setText(t.getLocalizedMessage());
+
+    }
+    private class ReadFromDb extends AsyncTask<Void,Void,Void>{
+
+
+        @Override
+        protected Void doInBackground(Void... voids) {
+            articles=articleDao.getAll();
+            Log.d(TAG, "doInBackground: load "+articles.isEmpty());
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+            Log.d(TAG, "onPostExecute: load"+articles.isEmpty());
+            if(!articles.isEmpty()){
+                adapter = new ArticleAdapter(articles,MainActivity.this);
+                RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(getApplicationContext());
+                recyclerView.setLayoutManager(layoutManager);
+                recyclerView.setAdapter(adapter);
+                Log.d(TAG, "onPostExecute: adapter setted");
+                recyclerView.setVisibility(View.VISIBLE);
+                swipeRefreshLayout.setEnabled(true);
+                progressBar.setVisibility(View.INVISIBLE);}
+            else{ makeResponse(); }
+        }
+    }
+    private class InsertInDb extends AsyncTask<Response<LaravelNewsUnit>,Void,Void>{
+
+        @Override
+        protected Void doInBackground(Response<LaravelNewsUnit>... responses) {
+            for(Response<LaravelNewsUnit> response:responses) {
+                Article article= new Article();
+                for (Datum datum : response.body().getData()) {
+                    article.setTitle(datum.getTitle());
+                    Log.d(TAG, "doInBackground: insert"+article.title);
+                    article.setImage(datum.getImage());
+                    article.setBody(datum.getBody());
+                    article.setId(datum.getId());
+                    articleDao.insert(article);
+                }
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+            Log.d(TAG, "onPostExecute1: "+firtstTimeAdapter);
+            if (firtstTimeAdapter){
+                Log.d(TAG, "onPostExecute: true entered");
+                fillRecyclerView();
+                firtstTimeAdapter=false;}
+            else{
+                Log.d(TAG, "onPostExecute: false entered");
+                recyclerView.getAdapter().notifyDataSetChanged();
+            }
+            recyclerView.setVisibility(View.VISIBLE);
+            progressBar.setVisibility(View.INVISIBLE);
+            swipeRefreshLayout.setEnabled(true);
+        }
     }
 }
