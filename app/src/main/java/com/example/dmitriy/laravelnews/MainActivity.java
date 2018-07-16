@@ -29,6 +29,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         SwipeRefreshLayout.OnRefreshListener,NewsInterface{
 
     public static final String ARTICLE_BODY="articleBody",ARTICLE_IMAGE="articleImage",ARTICLE_EXTRA="articleExtra";
+    private static final int LOAD_FROM_DB=0,INSERT_IN_DB=1;
 
     @BindView(R.id.recyclerView)
     RecyclerView recyclerView;
@@ -50,6 +51,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     List<Article> articles;
     Boolean firtstTimeAdapter =true;
     NewsHelper newsHelper;
+    Handler handler;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,6 +63,36 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 AppDatabase.class, "database").allowMainThreadQueries().build();
         articleDao = db.articleDao();
         newsHelper= new NewsHelper(this);
+        handler = new Handler() {
+            @Override
+            public void handleMessage(Message msg) {
+                switch (msg.what){
+                    case LOAD_FROM_DB:
+                    if (!articles.isEmpty()) {
+                        adapter = new ArticleAdapter(articles, MainActivity.this);
+                        RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(getApplicationContext());
+                        recyclerView.setLayoutManager(layoutManager);
+                        recyclerView.setAdapter(adapter);
+                        recyclerView.setVisibility(View.VISIBLE);
+                        progressBar.setVisibility(View.INVISIBLE);
+                    } else {
+                        makeResponse();
+                    }
+                    break;
+                    case INSERT_IN_DB:
+                        if (firtstTimeAdapter){
+                            fillRecyclerView();
+                            firtstTimeAdapter=false;}
+                        else{
+                            recyclerView.getAdapter().notifyDataSetChanged();
+                        }
+                        recyclerView.setVisibility(View.VISIBLE);
+                        progressBar.setVisibility(View.INVISIBLE);
+                        swipeRefreshLayout.setEnabled(true);
+                        break;
+                }
+            }
+        };
         fillRecyclerView();
     }
     void makeResponse() {
@@ -69,23 +101,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
     void fillRecyclerView()
     {
-        final Handler handler = new Handler() {
-            @Override
-            public void handleMessage(Message msg) {
-                if(!articles.isEmpty()){
-                    adapter = new ArticleAdapter(articles,MainActivity.this);
-                    RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(getApplicationContext());
-                    recyclerView.setLayoutManager(layoutManager);
-                    recyclerView.setAdapter(adapter);
-                    recyclerView.setVisibility(View.VISIBLE);
-                    progressBar.setVisibility(View.INVISIBLE);}
-                else{ makeResponse(); }
-            }
-        };
         Runnable runnable = new Runnable() {
             public void run() {
                 articles=articleDao.getAll();
-                handler.sendEmptyMessage(0);
+                handler.sendEmptyMessage(LOAD_FROM_DB);
             }
         };
         Thread thread = new Thread(runnable);
@@ -97,7 +116,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     public void onClick(View view) {
         failLinear.setVisibility(View.INVISIBLE);
-        swipeRefreshLayout.setVisibility(View.VISIBLE);
+        recyclerView.setVisibility(View.VISIBLE);
         fillRecyclerView();
         
     }
@@ -115,32 +134,35 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     public void onRefresh() {
         Log.d(TAG, "onRefresh: ");
+        swipeRefreshLayout.setRefreshing(false);
         recyclerView.setVisibility(View.INVISIBLE);
         progressBar.setVisibility(View.VISIBLE);
+        swipeRefreshLayout.setEnabled(false);
         makeResponse();
-        swipeRefreshLayout.setRefreshing(false);
+
     }
 
     @Override
-    public void sucsess(Response<LaravelNewsUnit> response) {
+    public void sucsess(final Response<LaravelNewsUnit> response) {
         failLinear.setVisibility(View.INVISIBLE);
-        Article article = new Article();
         articleDao.deleteAll();
-        for (Datum datum:response.body().data) {
-            article.setTitle(datum.title);
-            article.setImage(datum.image);
-            article.setBody(datum.body);
-            article.setId(datum.id);
-            articleDao.insert(article);
-        }
-        if (firtstTimeAdapter){
-            fillRecyclerView();
-            firtstTimeAdapter=false;}
-        else{
-            recyclerView.getAdapter().notifyDataSetChanged();
-        }
-        recyclerView.setVisibility(View.VISIBLE);
-        progressBar.setVisibility(View.INVISIBLE);
+        Runnable runnable = new Runnable() {
+            public void run() {
+                articleDao.deleteAll();
+                Article article = new Article();
+                for (Datum datum:response.body().getData()) {
+                    article.setTitle(datum.getTitle());
+                    article.setImage(datum.getImage());
+                    article.setBody(datum.getBody());
+                    article.setId(datum.getId());
+                    articleDao.insert(article);
+                }
+                handler.sendEmptyMessage(INSERT_IN_DB);
+            }
+        };
+        Thread thread = new Thread(runnable);
+        thread.start();
+
     }
 
     @Override
@@ -148,6 +170,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         progressBar.setVisibility(View.INVISIBLE);
         failLinear.setVisibility(View.VISIBLE);
         failTextView.setText(t.getLocalizedMessage());
-
+        swipeRefreshLayout.setEnabled(true);
     }
 }

@@ -10,8 +10,25 @@ import com.google.gson.annotations.SerializedName;
 public class LaravelNewsUnit {
     @SerializedName("data")
     @Expose
-    public List<Datum> data = null;
+    private List<Datum> data = null;
     @SerializedName("status")
     @Expose
-    public Status status;
+    private Status status;
+
+    public List<Datum> getData() {
+        return data;
+    }
+
+    public void setData(List<Datum> data) {
+        this.data = data;
+    }
+
+    public Status getStatus() {
+        return status;
+    }
+
+    public void setStatus(Status status) {
+        this.status = status;
+    }
+
 }

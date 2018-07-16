@@ -9,21 +9,69 @@ public class Datum {
 
     @SerializedName("id")
     @Expose
-    @PrimaryKey public Integer id;
+    private Integer id;
     @SerializedName("title")
     @Expose
-    public String title;
+    private String title;
     @SerializedName("body")
     @Expose
-    public String body;
+    private String body;
     @SerializedName("image")
     @Expose
-    public String image;
+    private String image;
     @SerializedName("created_at")
     @Expose
-    public String createdAt;
+    private String createdAt;
     @SerializedName("updated_at")
     @Expose
-    public String updatedAt;
+    private String updatedAt;
+
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public String getBody() {
+        return body;
+    }
+
+    public void setBody(String body) {
+        this.body = body;
+    }
+
+    public String getImage() {
+        return image;
+    }
+
+    public void setImage(String image) {
+        this.image = image;
+    }
+
+    public String getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(String createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public String getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(String updatedAt) {
+        this.updatedAt = updatedAt;
+    }
 
 }

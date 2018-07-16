@@ -34,7 +34,9 @@ public class Article implements Serializable{
     String getImage(){
         return image;
     }
-
+    Integer getId(){
+        return id;
+    }
     public void setBody(String body) {
         this.body = body;
     }
