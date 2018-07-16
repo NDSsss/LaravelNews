@@ -50,10 +50,9 @@ public class ShowArticleActivity extends AppCompatActivity {
             }
         });
         if(getIntent()!=null) {
-            ImagePipelineConfig config = ImagePipelineConfig.newBuilder(this).setDownsampleEnabled(false).build();
-            Fresco.initialize(this,config);
-            textView.setText(getIntent().getStringExtra(MainActivity.ARTICLE_BODY));
-            Uri uri = Uri.parse("http://176.112.213.150" + getIntent().getStringExtra(MainActivity.ARTICLE_IMAGE));
+            Article article =(Article) getIntent().getSerializableExtra(MainActivity.ARTICLE_EXTRA);
+            textView.setText(article.getBody());
+            Uri uri = Uri.parse("http://176.112.213.150" + article.getImage());
             simple.setImageURI(uri);
         }
     }
@@ -66,10 +65,7 @@ public class ShowArticleActivity extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
-
-        Log.d("myTag", "onBackPressed: ");
         super.onBackPressed();
-        finish();
     }
 
 }

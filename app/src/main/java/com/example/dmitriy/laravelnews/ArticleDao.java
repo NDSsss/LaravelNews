@@ -25,24 +25,4 @@ public interface ArticleDao {
     void delete(Article article);
     @Query("DELETE FROM article")
     void deleteAll();
-
 }
-/*@Dao
-public interface EmployeeDao {
-
-   @Query("SELECT * FROM employee")
-   List<Employee> getAll();
-
-   @Query("SELECT * FROM employee WHERE id = :id")
-   Employee getById(long id);
-
-   @Insert
-   void insert(Employee employee);
-
-   @Update
-   void update(Employee employee);
-
-   @Delete
-   void delete(Employee employee);
-
-}*/

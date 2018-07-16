@@ -15,79 +15,39 @@ import android.widget.TextView;
 
 import com.facebook.drawee.view.SimpleDraweeView;
 
+import java.io.Serializable;
 import java.util.List;
 
 @Entity
-public class Article {
+public class Article implements Serializable{
     @PrimaryKey Integer id;
-    public String title;
-    public String body;
-    public String image;
+    String title;
+    String body;
+    String image;
 
-    public static class ArticleAdapter extends RecyclerView.Adapter<ArticleAdapter.ArticleHolder> {
-
-        List<Article> articles;
-        OnArticleClickInterface articleClick;
-
-        public ArticleAdapter(List<Article> articles,OnArticleClickInterface onArticleClickInterface)
-        {
-            this.articles=articles;
-            this.articleClick=onArticleClickInterface;
-        }
-        public class ArticleHolder extends RecyclerView.ViewHolder{
-            public TextView body;
-            SimpleDraweeView simpleDraweeView;
-            LinearLayout linearLayout;
-
-            public ArticleHolder(final View itemView) {
-                super(itemView);
-                body =(TextView) itemView.findViewById(R.id.textViewTitle);
-                simpleDraweeView = itemView.findViewById(R.id.my_image_view);
-                linearLayout = itemView.findViewById(R.id.article_lianer);
-                linearLayout.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
-                        articleClick.onArticleClick(itemView,getAdapterPosition());
-                    }
-                });
-            }
-
-
-        }
-
-        @NonNull
-        @Override
-        public ArticleHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            View articleView = LayoutInflater.from(parent.getContext())
-                    .inflate(R.layout.atricle_item,parent,false);
-
-            return new ArticleHolder(articleView);
-        }
-
-        @Override
-        public void onBindViewHolder(@NonNull ArticleHolder holder, int position) {
-            Article article = articles.get(position);
-            holder.body.setText(article.body);
-            Uri uri = Uri.parse("http://176.112.213.150"+article.image);
-            holder.simpleDraweeView.setImageURI(uri);
-        }
-
-        @Override
-        public int getItemCount() {
-            return articles.size();
-        }
-
-
+    String getTitle(){
+        return title;
+    }
+    String getBody(){
+        return body;
+    }
+    String getImage(){
+        return image;
     }
 
-    @Database(entities = {Article.class}, version = 1)
-    public abstract static class AppDatabase extends RoomDatabase {
-        public abstract ArticleDao articleDao();
+    public void setBody(String body) {
+        this.body = body;
+    }
+
+    public void setImage(String image) {
+        this.image = image;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
     }
 }
-/*@Entity
-public class Person {
-    @PrimaryKey String name;
-    int age;
-    String favoriteColor;
-}*/
