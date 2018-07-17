@@ -1,8 +1,9 @@
 package com.example.dmitriy.laravelnews.LaravelNewsUnitClasses;
 
+import java.util.ArrayList;
 import java.util.List;
 
-import com.example.dmitriy.laravelnews.LaravelNewsUnitClasses.Datum;
+import com.example.dmitriy.laravelnews.LaravelNewsUnitClasses.NewsData;
 import com.example.dmitriy.laravelnews.LaravelNewsUnitClasses.Status;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
@@ -10,16 +11,16 @@ import com.google.gson.annotations.SerializedName;
 public class LaravelNewsUnit {
     @SerializedName("data")
     @Expose
-    private List<Datum> data = null;
+    private ArrayList<NewsData> data = null;
     @SerializedName("status")
     @Expose
     private Status status;
 
-    public List<Datum> getData() {
+    public ArrayList<NewsData> getData() {
         return data;
     }
 
-    public void setData(List<Datum> data) {
+    public void setData(ArrayList<NewsData> data) {
         this.data = data;
     }
 

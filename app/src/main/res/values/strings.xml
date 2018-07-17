@@ -3,4 +3,5 @@
     <string name="EXAMPLE_TEXT">Example Text</string>
     <string name="FAIL">Fail</string>
     <string name="load_from_memory">Load from memory</string>
+    <string name="DATABASE_NAME">database</string>
 </resources>

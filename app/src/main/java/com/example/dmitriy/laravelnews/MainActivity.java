@@ -1,13 +1,10 @@
 package com.example.dmitriy.laravelnews;
 
-import android.arch.persistence.room.Room;
 import android.content.Intent;
 import android.os.AsyncTask;
-import android.os.Handler;
-import android.os.Message;
+import android.os.Bundle;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -17,19 +14,21 @@ import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
-import com.example.dmitriy.laravelnews.LaravelNewsUnitClasses.Datum;
 import com.example.dmitriy.laravelnews.LaravelNewsUnitClasses.LaravelNewsUnit;
+import com.example.dmitriy.laravelnews.LaravelNewsUnitClasses.NewsData;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import retrofit2.Response;
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener,OnArticleClickInterface,
-        SwipeRefreshLayout.OnRefreshListener,NewsInterface{
+public class MainActivity extends AppCompatActivity implements View.OnClickListener, OnArticleClickInterface,
+        SwipeRefreshLayout.OnRefreshListener, NewsInterface {
 
-    public static final String ARTICLE_BODY="articleBody",ARTICLE_IMAGE="articleImage",ARTICLE_EXTRA="articleExtra";
+    public static final String ARTICLE_BODY = "articleBody", ARTICLE_IMAGE = "articleImage", ARTICLE_EXTRA = "articleExtra",
+            IMAGE_BASE_URL="http://176.112.213.150";
 
     @BindView(R.id.recyclerView)
     RecyclerView recyclerView;
@@ -44,12 +43,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @BindView(R.id.failButton)
     Button failButton;
 
-    AppDatabase db;
+
     ArticleDao articleDao;
     ArticleAdapter adapter;
-    String TAG ="myTag";
+    String TAG = "myTag";
     List<Article> articles;
-    Boolean firtstTimeAdapter =true;
+    Boolean firtstTimeAdapter = true;
     NewsHelper newsHelper;
 
     @Override
@@ -58,20 +57,17 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
         swipeRefreshLayout.setOnRefreshListener(this);
-        db =  Room.databaseBuilder(getApplicationContext(),
-                AppDatabase.class, "database").allowMainThreadQueries().build();
-        articleDao = db.articleDao();
-        newsHelper= new NewsHelper(this);
+        articleDao = MyApplication.db.articleDao();
+        newsHelper = new NewsHelper(this);
         fillRecyclerView();
     }
+
     void makeResponse() {
         failLinear.setVisibility(View.INVISIBLE);
         newsHelper.getNews();
     }
-    void fillRecyclerView()
-    {
-        articles=articleDao.getAll();
-        Log.d(TAG, "fillRecyclerView: "+articles.isEmpty());
+
+    void fillRecyclerView() {
         ReadFromDb readFromDb = new ReadFromDb();
         readFromDb.execute();
     }
@@ -86,18 +82,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     @Override
-    public void onArticleClick(View view,int position) {
-        Log.d(TAG, "onArticleClick: "+String.valueOf(position));
+    public void onArticleClick(View view, int position) {
         Intent intent = new Intent(this, ShowArticleActivity.class);
-        intent.putExtra(ARTICLE_EXTRA,articles.get(position));
-        intent.putExtra(ARTICLE_BODY,articles.get(position).getBody() );
-        intent.putExtra(ARTICLE_IMAGE,articles.get(position).getImage() );
+        intent.putExtra(ARTICLE_EXTRA, articles.get(position));
+        intent.putExtra(ARTICLE_BODY, articles.get(position).getBody());
+        intent.putExtra(ARTICLE_IMAGE, articles.get(position).getImage());
         startActivity(intent);
     }
 
     @Override
     public void onRefresh() {
-        Log.d(TAG, "onRefresh: ");
         swipeRefreshLayout.setRefreshing(false);
         swipeRefreshLayout.setEnabled(false);
         recyclerView.setVisibility(View.INVISIBLE);
@@ -122,44 +116,46 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         failTextView.setText(t.getLocalizedMessage());
 
     }
-    private class ReadFromDb extends AsyncTask<Void,Void,Void>{
 
-
+    private class ReadFromDb extends AsyncTask<Void, Void, Void> {
         @Override
         protected Void doInBackground(Void... voids) {
-            articles=articleDao.getAll();
-            Log.d(TAG, "doInBackground: load "+articles.isEmpty());
+            articles = articleDao.getAll();
             return null;
         }
 
         @Override
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
-            Log.d(TAG, "onPostExecute: load"+articles.isEmpty());
-            if(!articles.isEmpty()){
-                adapter = new ArticleAdapter(articles,MainActivity.this);
+            if(recyclerView.getAdapter()==null){
+                adapter = new ArticleAdapter(articles, MainActivity.this,IMAGE_BASE_URL);
                 RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(getApplicationContext());
                 recyclerView.setLayoutManager(layoutManager);
                 recyclerView.setAdapter(adapter);
-                Log.d(TAG, "onPostExecute: adapter setted");
+                swipeRefreshLayout.setVisibility(View.VISIBLE);
+            }
+            if (!articles.isEmpty()) {
+                recyclerView.getAdapter().notifyDataSetChanged();
                 recyclerView.setVisibility(View.VISIBLE);
                 swipeRefreshLayout.setEnabled(true);
-                progressBar.setVisibility(View.INVISIBLE);}
-            else{ makeResponse(); }
+                progressBar.setVisibility(View.INVISIBLE);
+            } else {
+                makeResponse();
+            }
         }
     }
-    private class InsertInDb extends AsyncTask<Response<LaravelNewsUnit>,Void,Void>{
 
+    private class InsertInDb extends AsyncTask<Response<LaravelNewsUnit>, Void, Void> {
         @Override
         protected Void doInBackground(Response<LaravelNewsUnit>... responses) {
-            for(Response<LaravelNewsUnit> response:responses) {
-                Article article= new Article();
-                for (Datum datum : response.body().getData()) {
-                    article.setTitle(datum.getTitle());
-                    Log.d(TAG, "doInBackground: insert"+article.title);
-                    article.setImage(datum.getImage());
-                    article.setBody(datum.getBody());
-                    article.setId(datum.getId());
+            for (Response<LaravelNewsUnit> response : responses) {
+                Article article = new Article();
+                for (NewsData data : response.body().getData()) {
+                    article.setTitle(data.getTitle());
+//                    Log.d(TAG, "doInBackground: insert"+article.title);
+                    article.setImage(data.getImage());
+                    article.setBody(data.getBody());
+                    article.setId(data.getId());
                     articleDao.insert(article);
                 }
             }
@@ -169,14 +165,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         @Override
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
-            Log.d(TAG, "onPostExecute1: "+firtstTimeAdapter);
-            if (firtstTimeAdapter){
-                Log.d(TAG, "onPostExecute: true entered");
+            if (firtstTimeAdapter) {
                 fillRecyclerView();
-                firtstTimeAdapter=false;}
-            else{
-                Log.d(TAG, "onPostExecute: false entered");
-                recyclerView.getAdapter().notifyDataSetChanged();
+                firtstTimeAdapter = false;
+            } else {
+                ReadFromDb readFromDb = new ReadFromDb();
+                readFromDb.execute();
+                //recyclerView.getAdapter().notifyDataSetChanged();
             }
             recyclerView.setVisibility(View.VISIBLE);
             progressBar.setVisibility(View.INVISIBLE);

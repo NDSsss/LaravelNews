@@ -11,17 +11,20 @@ import android.widget.TextView;
 
 import com.facebook.drawee.view.SimpleDraweeView;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class ArticleAdapter extends RecyclerView.Adapter<ArticleAdapter.ArticleHolder> {
 
     List<Article> articles;
     OnArticleClickInterface articleClick;
+    String baseUri;
 
-    public ArticleAdapter(List<Article> articles,OnArticleClickInterface onArticleClickInterface)
+    public ArticleAdapter(List<Article> articles,OnArticleClickInterface onArticleClickInterface,String baseUri)
     {
         this.articles=articles;
         this.articleClick=onArticleClickInterface;
+        this.baseUri=baseUri;
     }
     public class ArticleHolder extends RecyclerView.ViewHolder{
         public TextView body;
@@ -56,8 +59,8 @@ public class ArticleAdapter extends RecyclerView.Adapter<ArticleAdapter.ArticleH
     @Override
     public void onBindViewHolder(@NonNull ArticleHolder holder, int position) {
         Article article = articles.get(position);
-        holder.body.setText(article.body);
-        Uri uri = Uri.parse("http://176.112.213.150"+article.image);
+        holder.body.setText(article.getBody());
+        Uri uri = Uri.parse(baseUri+article.getImage());
         holder.simpleDraweeView.setImageURI(uri);
     }
 

@@ -20,36 +20,40 @@ import java.util.List;
 
 @Entity
 public class Article implements Serializable{
-    @PrimaryKey Integer id;
-    String title;
-    String body;
-    String image;
+    @PrimaryKey private Integer id;
+    private String title;
+    private String body;
+    private String image;
 
-    String getTitle(){
-        return title;
-    }
-    String getBody(){
-        return body;
-    }
-    String getImage(){
-        return image;
-    }
-    Integer getId(){
+    public Integer getId() {
         return id;
     }
-    public void setBody(String body) {
-        this.body = body;
+
+    public void setId(Integer id) {
+        this.id = id;
     }
 
-    public void setImage(String image) {
-        this.image = image;
+    public String getTitle() {
+        return title;
     }
 
     public void setTitle(String title) {
         this.title = title;
     }
 
-    public void setId(Integer id) {
-        this.id = id;
+    public String getBody() {
+        return body;
+    }
+
+    public void setBody(String body) {
+        this.body = body;
+    }
+
+    public String getImage() {
+        return image;
+    }
+
+    public void setImage(String image) {
+        this.image = image;
     }
 }

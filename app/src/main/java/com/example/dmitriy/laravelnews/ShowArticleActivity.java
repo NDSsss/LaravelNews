@@ -52,7 +52,7 @@ public class ShowArticleActivity extends AppCompatActivity {
         if(getIntent()!=null) {
             Article article =(Article) getIntent().getSerializableExtra(MainActivity.ARTICLE_EXTRA);
             textView.setText(article.getBody());
-            Uri uri = Uri.parse("http://176.112.213.150" + article.getImage());
+            Uri uri = Uri.parse(MainActivity.IMAGE_BASE_URL+ article.getImage());
             simple.setImageURI(uri);
         }
     }
